@@ -1,0 +1,417 @@
+#include <Wire.h>
+#include <LCD.h>
+#include <LiquidCrystal_I2C.h>
+#include <avr/interrupt.h>
+
+#define I2C_ADDR    0x27 // <<----- Add your address here.  Find it from I2C Scanner
+#define BACKLIGHT_PIN     3
+#define En_pin  2
+#define Rw_pin  1
+#define Rs_pin  0
+#define D4_pin  4
+#define D5_pin  5
+#define D6_pin  6
+#define D7_pin  7
+#define ButtonChange 2
+#define ButtonInc 18
+#define ButtonDec 19
+
+volatile boolean change = false;
+volatile boolean increm = false;
+volatile boolean decrem = false;
+volatile int string = 0;
+volatile int n1 = 0;
+volatile int n2 = 0;
+volatile int n3 = 0;
+volatile int n4 = 0;
+volatile int n5 = 0;
+volatile int n6 = 0;
+LiquidCrystal_I2C	lcd(I2C_ADDR,En_pin,Rw_pin,Rs_pin,D4_pin,D5_pin,D6_pin,D7_pin);
+
+const int buttonPin[6] = {7, 8, 9, 10, 11, A11};     // the number of the pushbutton pin
+const int ledPin =  13;      // the number of the LED pin
+const int analogInPin[6] = {A0, A1, A2, A3, A4, A5};  // Analog input pin that the potentiometer is attached to
+int sensorValue[6] = {0, 0, 0, 0, 0, 0};        // value read from the pot
+int outputValue[6] = {0, 0, 0, 0, 0, 0};        // value read from the pot
+int buttonState[6] = {0, 0, 0, 0, 0, 0};         // variable for reading the pushbutton status
+boolean active[6] = {false, false, false, false, false, false};
+
+void setup() {
+  //  Set MIDI baud rate:
+  Serial.begin(31250);
+    // initialize the LED pin as an output:
+  pinMode(ledPin, OUTPUT);      
+  // initialize the pushbutton pin as an input:
+  pinMode(buttonPin[0], INPUT);
+  pinMode(buttonPin[1], INPUT);
+  pinMode(buttonPin[2], INPUT);
+  pinMode(buttonPin[3], INPUT);
+  pinMode(buttonPin[4], INPUT);
+  pinMode(buttonPin[5], INPUT);
+
+  pinMode(ButtonChange, INPUT_PULLUP);
+  pinMode(ButtonInc, INPUT_PULLUP);
+  pinMode(ButtonDec, INPUT_PULLUP);
+  // initialize LCD and set up the number of columns and rows: 
+  lcd.begin(16, 2);
+  lcd.setBacklightPin(BACKLIGHT_PIN,POSITIVE);
+  lcd.setBacklight(HIGH);
+  lcd.home ();
+  
+  lcd.setCursor (0,0);
+  lcd.print("e"); 
+  lcd.setCursor (5,0);
+  lcd.print("a");
+  lcd.setCursor (10,0);
+  lcd.print("d");
+  lcd.setCursor (0,1);
+  lcd.print("g"); 
+  lcd.setCursor (5,1);
+  lcd.print("b");
+  lcd.setCursor (10,1);
+  lcd.print("e");
+ 
+  attachInterrupt(0, buttons, FALLING);
+    attachInterrupt(5, buttons, FALLING);
+      attachInterrupt(4, buttons, FALLING);
+}
+
+void loop() {
+
+  buttonState[0] = digitalRead(buttonPin[0]);
+  if ((buttonState[0] > 10) && (active[0] == false)) {     
+    active[0] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[0] = analogRead(analogInPin[0]);            
+    outputValue[0] = map(sensorValue[0], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[0]+4+n1, buttonState[0]);
+  }
+  else if (buttonState[0] <= 10) {
+    active[0] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+////////////////////////////////////////////////////////////////////
+  buttonState[1] = digitalRead(buttonPin[1]);
+  if ((buttonState[1] == HIGH) && (active[1] == false)) {     
+    active[1] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[1] = analogRead(analogInPin[1]);            
+    outputValue[1] = map(sensorValue[1], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[1]+9+n2, 127);
+  }
+  else if (buttonState[1] == LOW) {
+    active[1] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+////////////////////////////////////////////////////////////////////
+  buttonState[2] = digitalRead(buttonPin[2]);
+  if ((buttonState[2] == HIGH) && (active[2] == false)) {     
+    active[2] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[2] = analogRead(analogInPin[2]);            
+    outputValue[2] = map(sensorValue[2], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[2]+14+n3, 127);
+  }
+  else if (buttonState[2] == LOW) {
+    active[2] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+////////////////////////////////////////////////////////////////////
+  buttonState[3] = digitalRead(buttonPin[3]);
+  if ((buttonState[3] == HIGH) && (active[3] == false)) {     
+    active[3] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[3] = analogRead(analogInPin[3]);            
+    outputValue[3] = map(sensorValue[3], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[3]+19+n4, 127);
+  }
+  else if (buttonState[3] == LOW) {
+    active[3] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+////////////////////////////////////////////////////////////////////
+  buttonState[4] = digitalRead(buttonPin[4]);
+  if ((buttonState[4] == HIGH) && (active[4] == false)) {     
+    active[4] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[4] = analogRead(analogInPin[4]);            
+    outputValue[4] = map(sensorValue[4], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[4]+23+n5, 127);
+  }
+  else if (buttonState[4] == LOW) {
+    active[4] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+////////////////////////////////////////////////////////////////////
+  buttonState[5] = analogRead(buttonPin[5]);
+  buttonState[5] = map(buttonState[5], 0, 1023, 0, 127);  
+  delay(2);
+  if ((buttonState[5] > 10) && (active[5] == false)) {     
+    active[5] = true;
+    digitalWrite(ledPin, HIGH);  
+    sensorValue[5] = analogRead(analogInPin[5]);            
+    outputValue[5] = map(sensorValue[5], 0, 1023, 0x30, 0x4E);  
+    delay(2);
+    noteOn(0x90, outputValue[5]+28+n6, buttonState[5]);
+  }
+  else {
+    active[5] = false;
+    digitalWrite(ledPin, LOW); 
+  }
+/******************************************************************/
+/******************************************************************/
+  if (change == true) {     
+    string = ++string % 6;
+    lcd.setBacklight(HIGH);
+    switch(string)
+    {
+      case 0:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (10,1);
+      lcd.print("e");
+      lcd.setCursor (0,0);
+      lcd.print("E");
+      break;
+      case 1:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (0,0);
+      lcd.print("e");
+      lcd.setCursor (5,0);
+      lcd.print("A");
+      break;
+      case 2:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (5,0);
+      lcd.print("a");
+      lcd.setCursor (10,0);
+      lcd.print("D");
+      break;
+      case 3:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (10,0);
+      lcd.print("d");
+      lcd.setCursor (0,1);
+      lcd.print("G");
+      break;
+      case 4:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (0,1);
+      lcd.print("g");
+      lcd.setCursor (5,1);
+      lcd.print("B");
+      break;
+      case 5:////////////////////////////////////////////////////////////////////////////
+      lcd.setCursor (5,1);
+      lcd.print("b");
+      lcd.setCursor (10,1);
+      lcd.print("E");
+      break;
+    }
+    lcd.setBacklight(LOW);
+    change = false;
+  }
+/////////////////////////////////////////////////////////////////////////////////////////  
+  if (increm == true) {
+    lcd.setBacklight(HIGH);
+    switch(string)
+    {
+      case 0:////////////////////////////////////////////////////////////////////////////
+      n1++;
+      lcd.setCursor (1,0);
+      lcd.print("    ");
+      lcd.setCursor (1,0);
+      if (n1 > 0){
+        lcd.print("+");
+        lcd.print(n1);
+      }
+      else if (n1 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n1);
+      break;
+      case 1:////////////////////////////////////////////////////////////////////////////
+      n2++;
+      lcd.setCursor (6,0);
+      lcd.print("    ");
+      lcd.setCursor (6,0);
+      if (n2 > 0){
+        lcd.print("+");
+        lcd.print(n2);
+      }
+      else if (n2 == 0)
+        lcd.print("   ");
+      else
+        lcd.print(n2);
+      break;
+      case 2:////////////////////////////////////////////////////////////////////////////
+      n3++;
+      lcd.setCursor (11,0);
+      lcd.print("    ");
+      lcd.setCursor (11,0);
+      if (n3 > 0){
+        lcd.print("+");
+        lcd.print(n3);
+      }
+      else if (n3 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n3);
+      break;
+      case 3:////////////////////////////////////////////////////////////////////////////
+      n4++;
+      lcd.setCursor (1,1);
+      lcd.print("    ");
+      lcd.setCursor (1,1);
+      if (n4 > 0){
+        lcd.print("+");
+        lcd.print(n4);
+      }
+      else if (n4 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n4);
+      break;
+      case 4:////////////////////////////////////////////////////////////////////////////
+      n5++;
+      lcd.setCursor (6,1);
+      lcd.print("    ");
+      lcd.setCursor (6,1);
+      if (n5 > 0){
+        lcd.print("+");
+        lcd.print(n5);
+      }
+      else if (n5 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n5);
+      break;
+      case 5:////////////////////////////////////////////////////////////////////////////
+      n6++;
+      lcd.setCursor (11,1);
+      lcd.print("    ");
+      lcd.setCursor (11,1);
+      if (n6 > 0){
+        lcd.print("+");
+        lcd.print(n6);
+      }
+      else if (n6 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n6);
+      break;
+    }
+    lcd.setBacklight(LOW);
+    increm = false;
+  }
+/////////////////////////////////////////////////////////////////////////////////////////
+  if (decrem == true) {
+    lcd.setBacklight(HIGH);
+    switch(string)
+    {
+      case 0:////////////////////////////////////////////////////////////////////////////
+      n1--;
+      lcd.setCursor (1,0);
+      lcd.print("    ");
+      lcd.setCursor (1,0);
+      if (n1 > 0){
+        lcd.print("+");
+        lcd.print(n1);
+      }
+      else if (n1 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n1);
+      break;
+      case 1:////////////////////////////////////////////////////////////////////////////
+      n2--;
+      lcd.setCursor (6,0);
+      lcd.print("    ");
+      lcd.setCursor (6,0);
+      if (n2 > 0){
+        lcd.print("+");
+        lcd.print(n2);
+      }
+      else if (n2 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n2);
+      break;
+      case 2:////////////////////////////////////////////////////////////////////////////
+      n3--;
+      lcd.setCursor (11,0);
+      lcd.print("    ");
+      lcd.setCursor (11,0);
+      if (n3 > 0){
+        lcd.print("+");
+        lcd.print(n3);
+      }
+      else if (n3 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n3);
+      break;
+      case 3:////////////////////////////////////////////////////////////////////////////
+      n4--;
+      lcd.setCursor (1,1);
+      lcd.print("    ");
+      lcd.setCursor (1,1);
+      if (n4 > 0){
+        lcd.print("+");
+        lcd.print(n4);
+      }
+      else if (n4 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n4);
+      break;
+      case 4:////////////////////////////////////////////////////////////////////////////
+      n5--;
+      lcd.setCursor (6,1);
+      lcd.print("    ");
+      lcd.setCursor (6,1);
+      if (n5 > 0){
+        lcd.print("+");
+        lcd.print(n5);
+      }
+      else if (n5 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n5);
+      break;
+      case 5:////////////////////////////////////////////////////////////////////////////
+      n6--;
+      lcd.setCursor (11,1);
+      lcd.print("    ");
+      lcd.setCursor (11,1);
+      if (n6 > 0){
+        lcd.print("+");
+        lcd.print(n6);
+      }
+      else if (n6 == 0)
+        lcd.print("  ");
+      else
+        lcd.print(n6);
+      break;
+    }
+    lcd.setBacklight(LOW);
+    decrem = false;
+  }
+}
+
+void buttons()
+{
+  if (digitalRead(ButtonChange) == LOW)     
+    change = true;
+  else if (digitalRead(ButtonInc) == LOW)
+    increm = true;
+  else if (digitalRead(ButtonDec) == LOW)
+    decrem = true;
+}
+
+//  plays a MIDI note.  Doesn't check to see that
+//  cmd is greater than 127, or that data values are  less than 127:
+void noteOn(int cmd, int pitch, int velocity) {
+  Serial.write(cmd);
+  Serial.write(pitch);
+  Serial.write(velocity);
+}
